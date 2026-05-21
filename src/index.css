@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-neon-blue: #00f2ff;
+  --color-neon-pink: #ff0055;
+  --color-studio-dark: #050505;
+  --color-studio-card: #121212;
+  --color-studio-card-hover: #1c1c1c;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-studio-dark);
+    color: #f3f4f6;
+  }
+}
+
+/* Custom sound wave visualizer bar animation keyframe */
+@keyframes equalizer {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-equalizer {
+  animation: equalizer 1.2s ease-in-out infinite;
+  transform-origin: bottom;
+}

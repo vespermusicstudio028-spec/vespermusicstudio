@@ -1,0 +1,6 @@
+{
+  "name": "Vesper Music Studio",
+  "description": "Estúdio profissional de criação e produção musical personalizada com inteligência artificial para marcas e momentos especiais.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
