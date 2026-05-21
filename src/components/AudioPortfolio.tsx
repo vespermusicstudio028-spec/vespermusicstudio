@@ -418,7 +418,7 @@ export default function AudioPortfolio({
                         )}
                         <div className="flex flex-col text-left">
                           <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                            {isSelfPlaying ? (hasCustom ? "TOCANDO ARQUIVO..." : "SINTETIZANDO...") : (hasCustom ? "ARQUIVO IMPORTADO" : "AMOSTRA OFFLINE")}
+                            {isSelfPlaying ? (hasCustom ? "TOCANDO ARQUIVO..." : "SINTETIZANDO...") : "AMOSTRA OFFLINE"}
                           </span>
                           <span className="text-[10px] font-mono text-slate-500">
                             {hasCustom ? customAudios[track.id].name : `ESCALA: ${track.notes.slice(0, 3).join(" • ")}`}
