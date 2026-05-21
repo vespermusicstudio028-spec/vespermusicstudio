@@ -31,14 +31,14 @@ const PREBUILT_TRACKS: Track[] = [
     tags: ["Supermercados", "Jingle Chiclete", "Vendas", "Propaganda"]
   },
   {
-    id: "track-jingle-2",
-    title: "Sabor & Ritmo (Burguer & Cia)",
-    category: "Jingles & Propaganda",
-    description: "Estrutura moderna, com timbres de arpejador envolvente e batida firme. Desenhado para anúncios dinâmicos de gastronomia, stories e Reels do Instagram.",
-    bpm: 108,
-    notes: ["A minor", "F major", "C major", "G major"],
-    audioType: "synthwave",
-    tags: ["Gastronomia", "Propaganda", "Moderna"]
+    id: "track-sertanejo-1",
+    title: "BALADA PRIME (VIBE SERTANEJO POP)",
+    category: "Sertanejo & Piseiro",
+    description: "Uma mistura contagiante de sanfona marcante com elementos do pop moderno. Ritmo pra cima, ideal para aberturas de shows, comerciais de grandes eventos, vinhetas de rádio e para artistas que buscam uma base profissional e chiclete para estourar nas paradas.",
+    bpm: 128,
+    notes: ["G major", "E minor"],
+    audioType: "energetic",
+    tags: ["Sertanejo", "Piseiro", "Hit Regional", "Produção Musical"]
   },
   {
     id: "track-romance-1",
@@ -276,7 +276,7 @@ export default function AudioPortfolio({
     setCustomPlaying(null);
   };
 
-  const categories = ["All", "Jingles & Propaganda", "Casamentos & Noivados", "Músicas Românticas", "Música de Aniversário", "Eventos & Festividades"];
+  const categories = ["All", "Jingles & Propaganda", "Sertanejo & Piseiro", "Casamentos & Noivados", "Músicas Românticas", "Música de Aniversário", "Eventos & Festividades"];
 
   const filteredTracks = activeTab === "All"
     ? PREBUILT_TRACKS
