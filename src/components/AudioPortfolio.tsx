@@ -14,73 +14,44 @@ import {
   ChevronUp,
   Sparkles,
   Zap,
-  Plus
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Track } from "../types";
-import { saveAudio, getAllAudios } from "../utils/audioStorage";
+import defaultTracks from "../data/tracks.json";
+import {
+  saveAudio,
+  getAllAudios,
+  saveTrack,
+  getAllTracks,
+  deleteTrack,
+  deleteAudio
+} from "../utils/audioStorage";
 
-const PREBUILT_TRACKS: Track[] = [
-  {
-    id: "track-jingle-1",
-    title: "SUPER OFERTA (VIBE VAREJO ENÉRGICO)",
-    category: "Jingles & Propaganda",
-    description: "Um jingle comercial vibrante e de alta conversão. Com um ritmo pulsante e arranjo moderno, é a escolha perfeita para campanhas de varejo, anúncios de rádio, carros de som e ofertas dinâmicas no WhatsApp. Feito sob medida para fixar a sua marca na mente do cliente.",
-    bpm: 120,
-    notes: ["D major", "A major"],
-    audioType: "energetic",
-    tags: ["Supermercados", "Jingle Chiclete", "Vendas", "Propaganda"]
-  },
-  {
-    id: "track-sertanejo-1",
-    title: "BALADA PRIME (VIBE SERTANEJO POP)",
-    category: "Sertanejo & Piseiro",
-    description: "Uma mistura contagiante de sanfona marcante com elementos do pop moderno. Ritmo pra cima, ideal para aberturas de shows, comerciais de grandes eventos, vinhetas de rádio e para artistas que buscam uma base profissional e chiclete para estourar nas paradas.",
-    bpm: 128,
-    notes: ["G major", "E minor"],
-    audioType: "energetic",
-    tags: ["Sertanejo", "Piseiro", "Hit Regional", "Produção Musical"]
-  },
-  {
-    id: "track-romance-1",
-    title: "Teu Perfume nas Estrelas",
-    category: "Músicas Românticas",
-    description: "Arranjo sentimental profundo com acordes de piano romântico e ambiência estelar. Ideal para homenagens apaixonadas, bodas e dia dos namorados.",
-    bpm: 78,
-    notes: ["Cmaj7", "Am7", "Fmaj7", "G6"],
-    audioType: "romantic",
-    tags: ["Romântica", "Acústico", "Declaração"]
-  },
-  {
-    id: "track-wedding-1",
-    title: "Laços Eternos",
-    category: "Casamentos & Noivados",
-    description: "Arranjo com acordes majestosos de cordas e introdução clássica nupcial em piano. Cria a entrada ideal e emocionante para noivos ou noivas.",
-    bpm: 75,
-    notes: ["D major", "G major", "A major", "Bm7"],
-    audioType: "orchestral",
-    tags: ["Casamento", "Entrada dos Noivos", "Sinfônico"]
-  },
-  {
-    id: "track-bday-1",
-    title: "O Tempo Voa (Nossa História)",
-    category: "Música de Aniversário",
-    description: "Canção de presente acústica cheia de ternura, desenhada para narrar passagens marcantes da história de vida de quem você mais ama.",
-    bpm: 82,
-    notes: ["C major", "Em7", "Fmaj7", "G7"],
-    audioType: "romantic",
-    tags: ["Aniversário", "Presente de Vida", "Homenagem"]
-  },
-  {
-    id: "track-event-1",
-    title: "Abertura Triunfal (Grand Opening)",
-    category: "Eventos & Festividades",
-    description: "Abertura de impacto com batidas enérgicas e transições marcantes para feiras de negócios locais, convenções de comércios e desfiles.",
-    bpm: 125,
-    notes: ["Am7", "Em7", "Fmaj7", "G major"],
-    audioType: "energetic",
-    tags: ["Inauguração", "Eventos", "Marcante"]
-  }
-];
+const isLocalServer = () => {
+  const hn = window.location.hostname;
+  return hn === "localhost" || 
+         hn === "127.0.0.1" || 
+         hn.startsWith("192.168.") || 
+         hn.startsWith("10.") || 
+         hn.startsWith("172.16.") || 
+         hn.startsWith("172.17.") || 
+         hn.startsWith("172.18.") || 
+         hn.startsWith("172.19.") || 
+         hn.startsWith("172.20.") || 
+         hn.startsWith("172.21.") || 
+         hn.startsWith("172.22.") || 
+         hn.startsWith("172.23.") || 
+         hn.startsWith("172.24.") || 
+         hn.startsWith("172.25.") || 
+         hn.startsWith("172.26.") || 
+         hn.startsWith("172.27.") || 
+         hn.startsWith("172.28.") || 
+         hn.startsWith("172.29.") || 
+         hn.startsWith("172.30.") || 
+         hn.startsWith("172.31.") || 
+         hn.endsWith(".local");
+};
 
 const SUCCESS_CASES = [
   {
@@ -164,9 +135,139 @@ export default function AudioPortfolio({
   const pendingTrackIdRef = useRef<string>("");
   const [customAudios, setCustomAudios] = useState<Record<string, CustomAudio>>({});
   const [customPlaying, setCustomPlaying] = useState<string | null>(null);
+  
+  // DYNAMIC TRACKS AND EDIT STATE
+  const [tracks, setTracks] = useState<Track[]>(defaultTracks as Track[]);
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Track | null>(null);
+  const [editNotes, setEditNotes] = useState<string>("");
+  const [editTags, setEditTags] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState<boolean>(false);
 
-  // Carregar áudios salvos no IndexedDB ao iniciar a página
+  // Sync track modifications to server on localhost / local IP
+  const syncTracksWithServer = async (tracksList: Track[]) => {
+    if (isLocalServer()) {
+      try {
+        await fetch("/api/save-tracks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ tracks: tracksList })
+        });
+      } catch (err) {
+        console.error("Erro ao sincronizar faixas com o servidor local:", err);
+      }
+    }
+  };
+
+  // Convert File to Base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.substring(result.indexOf(",") + 1);
+        resolve(base64);
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Unified audio file handler (IndexedDB + local server upload)
+  const handleUploadAudio = async (trackId: string, file: File): Promise<string | undefined> => {
+    try {
+      await saveAudio(trackId, file.name, file);
+      
+      const url = URL.createObjectURL(file);
+      const audio = new Audio(url);
+      audio.volume = volume / 100;
+      audio.loop = true;
+      audio.onended = () => {
+        setCustomPlaying(null);
+      };
+      
+      setCustomAudios(prev => {
+        if (prev[trackId]) {
+          URL.revokeObjectURL(prev[trackId].url);
+        }
+        return {
+          ...prev,
+          [trackId]: { url, name: file.name, audio }
+        };
+      });
+
+      if (isLocalServer()) {
+        const base64Data = await convertFileToBase64(file);
+        const res = await fetch("/api/upload-audio", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            trackId,
+            filename: file.name,
+            base64Data
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data.audioUrl;
+        }
+      }
+    } catch (err) {
+      console.error("Erro no processamento do áudio:", err);
+    }
+    return undefined;
+  };
+
+  // 1. Initial Load of Dynamic Tracks from Server or Fallback
   useEffect(() => {
+    const loadTracks = async () => {
+      // If we are connected to the local development server, fetch the live tracks from the disk JSON
+      if (isLocalServer()) {
+        try {
+          const res = await fetch("/api/tracks");
+          if (res.ok) {
+            const serverTracks = await res.json();
+            if (serverTracks && serverTracks.length > 0) {
+              setTracks(serverTracks);
+              // Save to IndexedDB to keep local copy updated for offline fallback
+              await Promise.all(serverTracks.map((t: Track) => saveTrack(t)));
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Erro ao carregar faixas do servidor local, tentando IndexedDB:", err);
+        }
+      }
+
+      // Production / Fallback: Load from IndexedDB or static JSON
+      try {
+        const savedTracks = await getAllTracks();
+        if (savedTracks && savedTracks.length > 0) {
+          // In production, we want the deployed static JSON to override any stale local database
+          if (!isLocalServer()) {
+            setTracks(defaultTracks as Track[]);
+          } else {
+            setTracks(savedTracks);
+          }
+        } else {
+          // Initialize IndexedDB with default tracks
+          await Promise.all(defaultTracks.map(t => saveTrack(t as Track)));
+          setTracks(defaultTracks as Track[]);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar faixas:", err);
+        setTracks(defaultTracks as Track[]);
+      }
+    };
+
+    loadTracks();
+
+    // Load custom audio files from IndexedDB
     getAllAudios().then((saved) => {
       const restored: Record<string, CustomAudio> = {};
       saved.forEach((item) => {
@@ -183,20 +284,49 @@ export default function AudioPortfolio({
           audio
         };
       });
-      setCustomAudios(restored);
+      setCustomAudios(prev => ({ ...prev, ...restored }));
     }).catch(err => {
       console.error("Erro ao carregar áudios do IndexedDB:", err);
     });
   }, []);
 
-  // Sincronizar volume com áudios customizados
+  // 2. Load audioUrls from tracks list into customAudios if not already loaded (useful for production assets)
+  useEffect(() => {
+    const updatedAudios = { ...customAudios };
+    let changed = false;
+
+    tracks.forEach(track => {
+      if (track.audioUrl && !updatedAudios[track.id]) {
+        const audio = new Audio(track.audioUrl);
+        audio.volume = volume / 100;
+        audio.loop = true;
+        audio.onended = () => {
+          setCustomPlaying(null);
+        };
+        
+        const name = track.audioUrl.substring(track.audioUrl.lastIndexOf("/") + 1);
+        updatedAudios[track.id] = {
+          url: track.audioUrl,
+          name: name.substring(name.indexOf("-") + 1), // remove prefix like "trackId-"
+          audio
+        };
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      setCustomAudios(updatedAudios);
+    }
+  }, [tracks, volume]);
+
+  // Synchronize volume to dynamic audio instances
   useEffect(() => {
     Object.values(customAudios).forEach(ca => {
       ca.audio.volume = volume / 100;
     });
   }, [volume, customAudios]);
 
-  // Se o sintetizador começar a tocar, paramos o áudio customizado
+  // Stop custom playback when the synthesizer triggers
   useEffect(() => {
     if (isPlaying) {
       Object.values(customAudios).forEach(ca => {
@@ -214,41 +344,163 @@ export default function AudioPortfolio({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const trackId = pendingTrackIdRef.current;
     if (e.target.files && e.target.files.length > 0 && trackId) {
       const file = e.target.files[0];
-      // Limpar áudio anterior desse track se existir
+      
+      // Stop and clean up old audio instance
       if (customAudios[trackId]) {
         customAudios[trackId].audio.pause();
-        URL.revokeObjectURL(customAudios[trackId].url);
+        if (customAudios[trackId].url.startsWith("blob:")) {
+          URL.revokeObjectURL(customAudios[trackId].url);
+        }
       }
-      const url = URL.createObjectURL(file);
-      const audio = new Audio(url);
-      audio.volume = volume / 100;
-      audio.loop = true;
-      audio.onended = () => {
-        setCustomPlaying(null);
-      };
-      
-      // Salvar no IndexedDB para persistir
-      saveAudio(trackId, file.name, file).catch(err => {
-        console.error("Erro ao salvar áudio no IndexedDB:", err);
-      });
 
-      setCustomAudios(prev => ({
-        ...prev,
-        [trackId]: { url, name: file.name, audio }
-      }));
+      // Handle upload and update track record
+      const uploadedUrl = await handleUploadAudio(trackId, file);
+      if (uploadedUrl) {
+        setTracks(prev => {
+          const newTracks = prev.map(t => t.id === trackId ? { ...t, audioUrl: uploadedUrl } : t);
+          syncTracksWithServer(newTracks);
+          // Update IndexedDB record
+          const target = newTracks.find(t => t.id === trackId);
+          if (target) saveTrack(target);
+          return newTracks;
+        });
+      }
       e.target.value = "";
     }
   };
 
+  const handleEditClick = (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    setEditingTrackId(trackId);
+    setIsAddingNew(false);
+    setEditForm({ ...track });
+    setEditNotes(track.notes.join(" • "));
+    setEditTags(track.tags.map(t => t.startsWith("#") ? t : `#${t.toUpperCase()}`).join(" "));
+    setSelectedFile(null);
+  };
+
+  const handleAddNewClick = () => {
+    const newId = `track-custom-${Date.now()}`;
+    setEditingTrackId(newId);
+    setIsAddingNew(true);
+    setEditForm({
+      id: newId,
+      title: "Nova Música",
+      titleColor: "text-white",
+      category: "Jingles & Propaganda",
+      categoryColor: "text-neon-pink",
+      description: "Escreva uma descrição incrível para este jingle ou música.",
+      bpm: 120,
+      bpmColor: "text-slate-500",
+      notes: ["C major"],
+      audioType: "energetic",
+      tags: ["NOVA", "MÚSICA"],
+      waveColor: "bg-neon-blue",
+      audioUrl: ""
+    });
+    setEditNotes("C major");
+    setEditTags("#NOVA #MUSICA");
+    setSelectedFile(null);
+  };
+
+  const handleDeleteTrackClick = async () => {
+    if (!editForm || !editingTrackId) return;
+    if (!window.confirm(`Tem certeza que deseja excluir a música "${editForm.title}"?`)) {
+      return;
+    }
+    
+    try {
+      // 1. Delete entries
+      await deleteTrack(editingTrackId);
+      await deleteAudio(editingTrackId);
+      
+      // 2. Remove audio play state
+      setCustomAudios(prev => {
+        const copy = { ...prev };
+        if (copy[editingTrackId]) {
+          copy[editingTrackId].audio.pause();
+          if (copy[editingTrackId].url.startsWith("blob:")) {
+            URL.revokeObjectURL(copy[editingTrackId].url);
+          }
+          delete copy[editingTrackId];
+        }
+        return copy;
+      });
+
+      // 3. Update React state & sync with backend JSON
+      setTracks(prev => {
+        const newTracks = prev.filter(t => t.id !== editingTrackId);
+        syncTracksWithServer(newTracks);
+        return newTracks;
+      });
+
+      // 4. Close modal
+      setEditingTrackId(null);
+      setEditForm(null);
+      setSelectedFile(null);
+    } catch (err) {
+      console.error("Erro ao excluir música:", err);
+    }
+  };
+
+  const handleSaveCustomization = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm || !editingTrackId) return;
+
+    try {
+      let finalAudioUrl = editForm.audioUrl;
+      
+      // 1. Upload new audio file if selected
+      if (selectedFile) {
+        const uploadedUrl = await handleUploadAudio(editingTrackId, selectedFile);
+        if (uploadedUrl) {
+          finalAudioUrl = uploadedUrl;
+        }
+      }
+
+      // 2. Assemble updated track object
+      const updatedTrack: Track = {
+        ...editForm,
+        notes: editNotes.split("•").map(n => n.trim()).filter(n => n.length > 0),
+        tags: editTags.split(/\s+/).map(t => t.trim().toUpperCase().replace("#", "")).filter(t => t.length > 0),
+        audioUrl: finalAudioUrl
+      };
+
+      // 3. Save to IndexedDB
+      await saveTrack(updatedTrack);
+      
+      // 4. Update React state and sync
+      setTracks(prev => {
+        let newTracks;
+        const idx = prev.findIndex(t => t.id === editingTrackId);
+        if (idx >= 0) {
+          newTracks = [...prev];
+          newTracks[idx] = updatedTrack;
+        } else {
+          newTracks = [...prev, updatedTrack];
+        }
+        syncTracksWithServer(newTracks);
+        return newTracks;
+      });
+
+      // 5. Close modal
+      setEditingTrackId(null);
+      setEditForm(null);
+      setSelectedFile(null);
+    } catch (err) {
+      console.error("Erro ao salvar card:", err);
+    }
+  };
+
   const playCustomAudio = (trackId: string) => {
-    // Parar sintetizador se estiver tocando
     onStop();
     
-    // Parar qualquer outro áudio customizado
     Object.entries(customAudios).forEach(([id, ca]) => {
       if (id !== trackId) {
         ca.audio.pause();
@@ -276,11 +528,11 @@ export default function AudioPortfolio({
     setCustomPlaying(null);
   };
 
-  const categories = ["All", "Jingles & Propaganda", "Sertanejo & Piseiro", "Casamentos & Noivados", "Músicas Românticas", "Música de Aniversário", "Eventos & Festividades"];
+  const categories = ["All", "Jingles & Propaganda", "Casamentos & Noivados", "Músicas Românticas", "Música de Aniversário", "Eventos & Festividades"];
 
   const filteredTracks = activeTab === "All"
-    ? PREBUILT_TRACKS
-    : PREBUILT_TRACKS.filter(t => t.category === activeTab);
+    ? tracks
+    : tracks.filter(t => t.category === activeTab);
 
   const toggleFaq = (idx: number) => {
     setFaqOpen(faqOpen === idx ? null : idx);
@@ -314,7 +566,7 @@ export default function AudioPortfolio({
         </div>
 
         {/* Tab Filtros - Square Brutalist Look */}
-        <div className="flex flex-wrap gap-2 justify-center mb-12">
+        <div className="flex flex-wrap gap-2 justify-center mb-12 items-center">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -328,6 +580,13 @@ export default function AudioPortfolio({
               {cat === "All" ? "Todos os Estilos" : cat}
             </button>
           ))}
+          <button
+            onClick={handleAddNewClick}
+            className="px-5 py-2.5 rounded-none font-display text-xs uppercase tracking-[0.15em] bg-neon-pink/15 text-neon-pink hover:bg-neon-pink/35 transition-all duration-300 font-bold border border-neon-pink/30 hover:border-neon-pink cursor-pointer flex items-center gap-2"
+          >
+            <Plus className="w-3.5 h-3.5 animate-pulse" />
+            Adicionar Nova Música
+          </button>
         </div>
 
         {/* Lista de Tracks - Custom Left Border Matching Style */}
@@ -338,12 +597,24 @@ export default function AudioPortfolio({
             const isSynthPlaying = isPlaying === track.id;
             const isSelfPlaying = isCustomPlaying || isSynthPlaying;
 
-            // Define active accent color class for left-border
-            const accentBorderColor =
-              track.audioType === "romantic" ? "border-l-rose-500" :
-              track.audioType === "energetic" ? "border-l-amber-500" :
-              track.audioType === "orchestral" ? "border-l-indigo-500" :
-              "border-l-neon-blue";
+            const category = track.category;
+            const categoryColor = track.categoryColor || "text-neon-pink";
+            const bpm = `${track.bpm} BPM`;
+            const bpmColor = track.bpmColor || "text-slate-500";
+            const title = track.title;
+            const titleColor = track.titleColor || "text-white";
+            const description = track.description;
+            const notesStr = track.notes.join(" • ");
+            const tagsList = track.tags.map(t => t.startsWith("#") ? t : `#${t.toUpperCase()}`);
+            const waveColor = track.waveColor || (
+              track.audioType === "romantic" ? "bg-rose-500" :
+              track.audioType === "energetic" ? "bg-amber-400" :
+              track.audioType === "orchestral" ? "bg-indigo-500" :
+              "bg-neon-blue"
+            );
+
+            // Left border accent color derived from waveColor class
+            const accentBorderColor = waveColor.replace("bg-", "border-l-");
 
             return (
               <div
@@ -358,16 +629,16 @@ export default function AudioPortfolio({
                 <div className="flex flex-col h-full justify-between">
                   <div>
                     <div className="flex justify-between items-start mb-4">
-                      <span className="text-[10px] font-mono tracking-widest text-neon-pink uppercase font-bold">
-                        {track.category}
+                      <span className={`text-[10px] font-mono tracking-widest uppercase font-bold ${categoryColor}`}>
+                        {category}
                       </span>
-                      <div className="flex items-center gap-1.5 text-xs font-mono text-slate-500">
-                        <span>{track.bpm} BPM</span>
+                      <div className={`flex items-center gap-1.5 text-xs font-mono font-bold ${bpmColor}`}>
+                        <span>{bpm}</span>
                       </div>
                     </div>
 
-                    <h3 className="text-2xl font-display font-black uppercase tracking-tight text-white mb-1">
-                      {track.title}
+                    <h3 className={`text-2xl font-display font-black uppercase tracking-tight mb-1 ${titleColor}`}>
+                      {title}
                     </h3>
                     {/* Mostrar nome do arquivo importado */}
                     {hasCustom && (
@@ -378,16 +649,16 @@ export default function AudioPortfolio({
                       </div>
                     )}
                     <p className="text-gray-400 text-sm leading-relaxed mb-6 font-light">
-                      {track.description}
+                      {description}
                     </p>
                   </div>
 
                   <div>
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1.5 mb-6">
-                      {track.tags.map(t => (
+                      {tagsList.map(t => (
                         <span key={t} className="px-2 py-0.5 rounded-none text-[9px] font-mono uppercase tracking-wider bg-white/5 text-slate-300 border border-white/5 font-bold">
-                          #{t}
+                          {t}
                         </span>
                       ))}
                     </div>
@@ -421,7 +692,7 @@ export default function AudioPortfolio({
                             {isSelfPlaying ? (hasCustom ? "TOCANDO ARQUIVO..." : "SINTETIZANDO...") : "AMOSTRA OFFLINE"}
                           </span>
                           <span className="text-[10px] font-mono text-slate-500">
-                            {hasCustom ? customAudios[track.id].name : `ESCALA: ${track.notes.slice(0, 3).join(" • ")}`}
+                            {hasCustom ? customAudios[track.id].name : `ESCALA: ${notesStr}`}
                           </span>
                         </div>
                       </div>
@@ -437,28 +708,33 @@ export default function AudioPortfolio({
                             }}
                             className={`w-1 rounded-none ${
                               isSelfPlaying ? "animate-equalizer" : ""
-                            } ${
-                              track.audioType === "romantic" ? "bg-rose-500" :
-                              track.audioType === "energetic" ? "bg-amber-400" :
-                              track.audioType === "orchestral" ? "bg-indigo-500" :
-                              "bg-neon-blue"
-                            }`}
+                            } ${waveColor}`}
                           />
                         ))}
                       </div>
                     </div>
 
-                    {/* Botão para Adicionar/Substituir Música */}
-                    <button
-                      onClick={() => handleImportClick(track.id)}
-                      className={`w-full mt-3 py-3 rounded-none font-display text-[10px] uppercase tracking-[0.2em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer ${
-                        hasCustom
-                          ? "bg-transparent hover:bg-emerald-500 text-emerald-400 hover:text-studio-dark border border-emerald-500/30 hover:border-emerald-500"
-                          : "bg-transparent hover:bg-neon-blue text-neon-blue hover:text-studio-dark border border-neon-blue/30 hover:border-neon-blue"
-                      }`}
-                    >
-                      <Plus className="w-3.5 h-3.5" /> {hasCustom ? "Substituir música" : "Adicionar música"}
-                    </button>
+                    <div className="flex gap-2 mt-3">
+                      {/* Botão de Adicionar/Substituir Música */}
+                      <button
+                        onClick={() => handleImportClick(track.id)}
+                        className={`flex-1 py-3 rounded-none font-display text-[10px] uppercase tracking-[0.2em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer ${
+                          hasCustom
+                            ? "bg-transparent hover:bg-emerald-500 text-emerald-400 hover:text-studio-dark border border-emerald-500/30 hover:border-emerald-500"
+                            : "bg-transparent hover:bg-neon-blue text-neon-blue hover:text-studio-dark border border-neon-blue/30 hover:border-neon-blue"
+                        }`}
+                      >
+                        <Plus className="w-3.5 h-3.5" /> {hasCustom ? "Substituir" : "Adicionar Áudio"}
+                      </button>
+
+                      {/* Botão de Editar Card */}
+                      <button
+                        onClick={() => handleEditClick(track.id)}
+                        className="px-4 py-3 rounded-none font-display text-[10px] uppercase tracking-[0.2em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer bg-transparent hover:bg-white text-white hover:text-studio-dark border border-white/20 hover:border-white"
+                      >
+                        <Settings2 className="w-3.5 h-3.5" /> Editar Card
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -587,6 +863,251 @@ export default function AudioPortfolio({
           </p>
         </div>
       </div>
+
+      {/* MODAL DE CUSTOMIZAÇÃO DO CARD */}
+      {editingTrackId && editForm && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="bg-[#0c0c0c] border-2 border-white/20 w-full max-w-xl p-8 relative flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+              <h4 className="text-lg font-display font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-neon-blue animate-pulse" /> {isAddingNew ? "Criar Nova Música" : "Personalizar Card"}
+              </h4>
+              <button 
+                onClick={() => { setEditingTrackId(null); setEditForm(null); setSelectedFile(null); }}
+                className="text-slate-400 hover:text-white transition-colors cursor-pointer text-xs font-mono uppercase tracking-widest"
+              >
+                [ FECHAR ]
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveCustomization} className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar text-left">
+              
+              {/* Categoria e Cor */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Categoria</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.category}
+                    onChange={e => setEditForm(prev => prev ? { ...prev, category: e.target.value } : null)}
+                    className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Cor da Categoria</label>
+                  <select
+                    value={editForm.categoryColor || "text-neon-pink"}
+                    onChange={e => setEditForm(prev => prev ? { ...prev, categoryColor: e.target.value } : null)}
+                    className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  >
+                    <option value="text-neon-pink">Rosa Neon (Padrão)</option>
+                    <option value="text-neon-blue">Azul Neon</option>
+                    <option value="text-emerald-400">Verde Emerald</option>
+                    <option value="text-amber-400">Amarelo Amber</option>
+                    <option value="text-rose-500">Rosa Rose</option>
+                    <option value="text-indigo-500">Roxo Indigo</option>
+                    <option value="text-white">Branco</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Título e Cor */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Título da Música</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.title}
+                    onChange={e => setEditForm(prev => prev ? { ...prev, title: e.target.value } : null)}
+                    className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Cor do Título</label>
+                  <select
+                    value={editForm.titleColor || "text-white"}
+                    onChange={e => setEditForm(prev => prev ? { ...prev, titleColor: e.target.value } : null)}
+                    className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  >
+                    <option value="text-white">Branco (Padrão)</option>
+                    <option value="text-neon-blue">Azul Neon</option>
+                    <option value="text-neon-pink">Rosa Neon</option>
+                    <option value="text-emerald-400">Verde Emerald</option>
+                    <option value="text-amber-400">Amarelo Amber</option>
+                    <option value="text-rose-500">Rosa Rose</option>
+                    <option value="text-indigo-500">Roxo Indigo</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* BPM e Cor */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">BPM (Batidas por Minuto)</label>
+                  <input
+                    type="number"
+                    required
+                    value={editForm.bpm}
+                    onChange={e => setEditForm(prev => prev ? { ...prev, bpm: Number(e.target.value) || 120 } : null)}
+                    className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Cor do BPM</label>
+                  <select
+                    value={editForm.bpmColor || "text-slate-500"}
+                    onChange={e => setEditForm(prev => prev ? { ...prev, bpmColor: e.target.value } : null)}
+                    className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  >
+                    <option value="text-slate-500">Cinza (Padrão)</option>
+                    <option value="text-neon-blue">Azul Neon</option>
+                    <option value="text-neon-pink">Rosa Neon</option>
+                    <option value="text-emerald-400">Verde Emerald</option>
+                    <option value="text-amber-400">Amarelo Amber</option>
+                    <option value="text-rose-500">Rosa Rose</option>
+                    <option value="text-white">Branco</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Escala */}
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Escala / Notas (Separadas por • )</label>
+                <input
+                  type="text"
+                  required
+                  value={editNotes}
+                  onChange={e => setEditNotes(e.target.value)}
+                  className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  placeholder="Ex: D major • A major • G major"
+                />
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Descrição</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={editForm.description}
+                  onChange={e => setEditForm(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Hashtags */}
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Hashtags / Tags (Separadas por espaço)</label>
+                <input
+                  type="text"
+                  required
+                  value={editTags}
+                  onChange={e => setEditTags(e.target.value)}
+                  className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                  placeholder="Ex: #ANIVERSARIO #HOMENAGEM #VESPERSTUDIO"
+                />
+              </div>
+
+              {/* Cor das Ondas de Som */}
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Cor das Ondas do Som (Equalizador)</label>
+                <select
+                  value={editForm.waveColor || "bg-neon-blue"}
+                  onChange={e => setEditForm(prev => prev ? { ...prev, waveColor: e.target.value } : null)}
+                  className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                >
+                  <option value="bg-neon-blue">Azul Neon (Padrão)</option>
+                  <option value="bg-neon-pink">Rosa Neon</option>
+                  <option value="bg-rose-500">Rosa Rose</option>
+                  <option value="bg-amber-400">Amarelo Amber</option>
+                  <option value="bg-indigo-500">Roxo Indigo</option>
+                  <option value="bg-emerald-500">Verde Emerald</option>
+                  <option value="bg-white">Branco</option>
+                </select>
+              </div>
+
+              {/* Estilo do Sintetizador */}
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Estilo do Sintetizador (Se não houver arquivo de áudio)</label>
+                <select
+                  value={editForm.audioType}
+                  onChange={e => setEditForm(prev => prev ? { ...prev, audioType: e.target.value as any } : null)}
+                  className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-blue"
+                >
+                  <option value="energetic">Varejo Enérgico (Energetic)</option>
+                  <option value="synthwave">Moderna Synthwave (Synthwave)</option>
+                  <option value="romantic">Acústico Romântico (Romantic)</option>
+                  <option value="orchestral">Sinfônico Casamento (Orchestral)</option>
+                </select>
+              </div>
+
+              {/* Arquivo de Áudio */}
+              <div>
+                <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5 font-bold">Arquivo de Áudio (.mp3, .wav, .ogg, etc.)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        setSelectedFile(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                    id="modal-audio-upload"
+                  />
+                  <label
+                    htmlFor="modal-audio-upload"
+                    className="flex-1 bg-[#121212] border border-white/15 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-neon-blue cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between"
+                  >
+                    <span className="truncate max-w-[320px]">{selectedFile ? selectedFile.name : (editForm.audioUrl ? "Áudio configurado" : "Nenhum arquivo selecionado")}</span>
+                    <span className="text-[10px] font-mono text-neon-blue uppercase font-bold shrink-0">[ PROCURAR ]</span>
+                  </label>
+                </div>
+                {editForm.audioUrl && !selectedFile && (
+                  <span className="text-[9px] font-mono text-slate-500 mt-1 block truncate">
+                    Caminho do áudio: {editForm.audioUrl}
+                  </span>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-4 border-t border-white/10 items-center justify-between">
+                {!isAddingNew && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteTrackClick}
+                    className="px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-red-500 hover:text-white border border-red-500/20 hover:border-red-600 hover:bg-red-600 transition-all cursor-pointer bg-transparent flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Excluir Música
+                  </button>
+                )}
+                <div className="flex-1" />
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => { setEditingTrackId(null); setEditForm(null); setSelectedFile(null); }}
+                    className="px-5 py-2.5 text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-white border border-white/10 hover:border-white/20 transition-all cursor-pointer bg-transparent"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 text-[10px] font-mono uppercase tracking-wider bg-neon-blue text-studio-dark font-black hover:bg-cyan-300 transition-all shadow-[0_0_15px_rgba(0,242,255,0.3)] cursor-pointer border-0"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

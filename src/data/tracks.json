@@ -1,0 +1,140 @@
+[
+  {
+    "id": "track-jingle-1",
+    "title": "SUPER OFERTA DYNAMIC SYNC",
+    "titleColor": "text-white",
+    "category": "Jingles & Propaganda",
+    "categoryColor": "text-neon-pink",
+    "description": "Um jingle comercial vibrante e de alta conversão. Com um ritmo pulsante e arranjo moderno, é a escolha perfeita para campanhas de varejo, anúncios de rádio, carros de som e ofertas dinâmicas no WhatsApp. Feito sob medida para fixar a sua marca na mente do cliente.",
+    "bpm": 120,
+    "bpmColor": "text-slate-500",
+    "notes": [
+      "D major",
+      "A major"
+    ],
+    "audioType": "energetic",
+    "tags": [
+      "SUPERMERCADOS",
+      "JINGLE",
+      "CHICLETE",
+      "VENDAS",
+      "PROPAGANDA"
+    ],
+    "waveColor": "bg-amber-400"
+  },
+  {
+    "id": "track-jingle-2",
+    "title": "Sabor & Ritmo (Burguer & Cia)",
+    "titleColor": "text-white",
+    "category": "Jingles & Propaganda",
+    "categoryColor": "text-neon-pink",
+    "description": "Estrutura moderna, com timbres de arpejador envolvente e batida firme. Desenhado para anúncios dinâmicos de gastronomia, stories e Reels do Instagram.",
+    "bpm": 108,
+    "bpmColor": "text-slate-500",
+    "notes": [
+      "A minor",
+      "F major",
+      "C major",
+      "G major"
+    ],
+    "audioType": "synthwave",
+    "tags": [
+      "Gastronomia",
+      "Propaganda",
+      "Moderna"
+    ],
+    "waveColor": "bg-neon-blue"
+  },
+  {
+    "id": "track-romance-1",
+    "title": "Teu Perfume nas Estrelas",
+    "titleColor": "text-white",
+    "category": "Músicas Românticas",
+    "categoryColor": "text-neon-pink",
+    "description": "Arranjo sentimental profundo com acordes de piano romântico e ambiência estelar. Ideal para homenagens apaixonadas, bodas e dia dos namorados.",
+    "bpm": 78,
+    "bpmColor": "text-slate-500",
+    "notes": [
+      "Cmaj7",
+      "Am7",
+      "Fmaj7",
+      "G6"
+    ],
+    "audioType": "romantic",
+    "tags": [
+      "Romântica",
+      "Acústico",
+      "Declaração"
+    ],
+    "waveColor": "bg-rose-500"
+  },
+  {
+    "id": "track-wedding-1",
+    "title": "Laços Eternos",
+    "titleColor": "text-white",
+    "category": "Casamentos & Noivados",
+    "categoryColor": "text-neon-pink",
+    "description": "Arranjo com acordes majestosos de cordas e introdução clássica nupcial em piano. Cria a entrada ideal e emocionante para noivos ou noivas.",
+    "bpm": 75,
+    "bpmColor": "text-slate-500",
+    "notes": [
+      "D major",
+      "G major",
+      "A major",
+      "Bm7"
+    ],
+    "audioType": "orchestral",
+    "tags": [
+      "Casamento",
+      "Entrada dos Noivos",
+      "Sinfônico"
+    ],
+    "waveColor": "bg-indigo-500"
+  },
+  {
+    "id": "track-bday-1",
+    "title": "O Tempo Voa (Nossa História)",
+    "titleColor": "text-white",
+    "category": "Música de Aniversário",
+    "categoryColor": "text-neon-pink",
+    "description": "Canção de presente acústica cheia de ternura, desenhada para narrar passagens marcantes da história de vida de quem você mais ama.",
+    "bpm": 82,
+    "bpmColor": "text-slate-500",
+    "notes": [
+      "C major",
+      "Em7",
+      "Fmaj7",
+      "G7"
+    ],
+    "audioType": "romantic",
+    "tags": [
+      "Aniversário",
+      "Presente de Vida",
+      "Homenagem"
+    ],
+    "waveColor": "bg-rose-500"
+  },
+  {
+    "id": "track-event-1",
+    "title": "Abertura Triunfal (Grand Opening)",
+    "titleColor": "text-white",
+    "category": "Eventos & Festividades",
+    "categoryColor": "text-neon-pink",
+    "description": "Abertura de impacto com batidas enérgicas e transições marcantes para feiras de negócios locais, convenções de comércios e desfiles.",
+    "bpm": 125,
+    "bpmColor": "text-slate-500",
+    "notes": [
+      "Am7",
+      "Em7",
+      "Fmaj7",
+      "G major"
+    ],
+    "audioType": "energetic",
+    "tags": [
+      "Inauguração",
+      "Eventos",
+      "Marcante"
+    ],
+    "waveColor": "bg-amber-400"
+  }
+]

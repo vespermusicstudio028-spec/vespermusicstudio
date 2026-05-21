@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
@@ -12,7 +13,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+
 
 // Initialize Gemini SDK with named parameter and 'aistudio-build' User-Agent header
 const apiKey = process.env.GEMINI_API_KEY;
@@ -92,6 +94,85 @@ A resposta DEVE ser estritamente no formato JSON válido. Não coloque nenhuma f
     console.error("Gemini Brainstorming Error:", error);
     res.status(500).json({
       error: "Ocorreu um erro ao processar o seu briefing com a IA da Vesper.",
+      details: error.message
+    });
+  }
+});
+
+// REST API to fetch edited tracks list from src/data/tracks.json
+app.get("/api/tracks", async (req, res) => {
+  try {
+    const filePath = path.join(__dirname, "src", "data", "tracks.json");
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, "utf-8");
+      return res.json(JSON.parse(data));
+    }
+    res.json([]);
+  } catch (error: any) {
+    console.error("Error reading tracks:", error);
+    res.status(500).json({
+      error: "Erro ao ler as faixas no servidor.",
+      details: error.message
+    });
+  }
+});
+
+// REST API to save edited tracks list to src/data/tracks.json
+app.post("/api/save-tracks", async (req, res) => {
+  try {
+    const { tracks } = req.body;
+    if (!tracks || !Array.isArray(tracks)) {
+      return res.status(400).json({ error: "Tracks array is required." });
+    }
+
+    const filePath = path.join(__dirname, "src", "data", "tracks.json");
+    
+    // Ensure the data directory exists
+    const dirPath = path.dirname(filePath);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(tracks, null, 2), "utf-8");
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error saving tracks:", error);
+    res.status(500).json({
+      error: "Erro ao salvar as faixas no arquivo tracks.json.",
+      details: error.message
+    });
+  }
+});
+
+// REST API to upload custom audio files to public/audio/
+app.post("/api/upload-audio", async (req, res) => {
+  try {
+    const { trackId, filename, base64Data } = req.body;
+    if (!trackId || !filename || !base64Data) {
+      return res.status(400).json({ error: "Missing trackId, filename, or base64Data." });
+    }
+
+    // Clean up filename and get extension
+    const cleanFilename = `${trackId}-${filename.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
+    
+    // Ensure public/audio directory exists
+    const audioDir = path.join(__dirname, "public", "audio");
+    if (!fs.existsSync(audioDir)) {
+      fs.mkdirSync(audioDir, { recursive: true });
+    }
+
+    const filePath = path.join(audioDir, cleanFilename);
+    const buffer = Buffer.from(base64Data, "base64");
+    fs.writeFileSync(filePath, buffer);
+
+    res.json({
+      success: true,
+      audioUrl: `/audio/${cleanFilename}`
+    });
+  } catch (error: any) {
+    console.error("Error uploading audio:", error);
+    res.status(500).json({
+      error: "Erro ao fazer upload do áudio para o servidor.",
       details: error.message
     });
   }
