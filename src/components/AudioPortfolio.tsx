@@ -689,10 +689,14 @@ export default function AudioPortfolio({
                         )}
                         <div className="flex flex-col text-left">
                           <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                            {isSelfPlaying ? (hasCustom ? "TOCANDO ARQUIVO..." : "SINTETIZANDO...") : "AMOSTRA OFFLINE"}
+                            {isSelfPlaying 
+                              ? (hasCustom ? "TOCANDO PRODUTO..." : "SINTETIZANDO...") 
+                              : (hasCustom ? "AMOSTRA DE ESTÚDIO" : "ESTRUTURA DE ARRANJO")}
                           </span>
                           <span className="text-[10px] font-mono text-slate-500">
-                            {hasCustom ? customAudios[track.id].name : `ESCALA: ${notesStr}`}
+                            {hasCustom 
+                              ? customAudios[track.id].name.replace(/\.[^/.]+$/, "").replace(/_/g, " ").toUpperCase()
+                              : `TONALIDADE: ${notesStr}`}
                           </span>
                         </div>
                       </div>
@@ -700,7 +704,7 @@ export default function AudioPortfolio({
                       {/* Equalizador Animado */}
                       <div className="flex items-end gap-[3px] h-6 px-3">
                         {[1, 2, 3, 4, 5, 6].map((bar) => (
-                          <div
+                           <div
                             key={bar}
                             style={{
                               animationDelay: `${bar * 0.15}s`,
@@ -714,27 +718,42 @@ export default function AudioPortfolio({
                       </div>
                     </div>
 
-                    <div className="flex gap-2 mt-3">
-                      {/* Botão de Adicionar/Substituir Música */}
-                      <button
-                        onClick={() => handleImportClick(track.id)}
-                        className={`flex-1 py-3 rounded-none font-display text-[10px] uppercase tracking-[0.2em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer ${
-                          hasCustom
-                            ? "bg-transparent hover:bg-emerald-500 text-emerald-400 hover:text-studio-dark border border-emerald-500/30 hover:border-emerald-500"
-                            : "bg-transparent hover:bg-neon-blue text-neon-blue hover:text-studio-dark border border-neon-blue/30 hover:border-neon-blue"
-                        }`}
-                      >
-                        <Plus className="w-3.5 h-3.5" /> {hasCustom ? "Substituir" : "Adicionar Áudio"}
-                      </button>
+                    {isLocalServer() ? (
+                      <div className="flex gap-2 mt-3 animate-fadeIn">
+                        {/* Botão de Adicionar/Substituir Música */}
+                        <button
+                          onClick={() => handleImportClick(track.id)}
+                          className={`flex-1 py-3 rounded-none font-display text-[10px] uppercase tracking-[0.2em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer ${
+                            hasCustom
+                              ? "bg-transparent hover:bg-emerald-500 text-emerald-400 hover:text-studio-dark border border-emerald-500/30 hover:border-emerald-500"
+                              : "bg-transparent hover:bg-neon-blue text-neon-blue hover:text-studio-dark border border-neon-blue/30 hover:border-neon-blue"
+                          }`}
+                        >
+                          <Plus className="w-3.5 h-3.5" /> {hasCustom ? "Substituir" : "Adicionar Áudio"}
+                        </button>
 
-                      {/* Botão de Editar Card */}
-                      <button
-                        onClick={() => handleEditClick(track.id)}
-                        className="px-4 py-3 rounded-none font-display text-[10px] uppercase tracking-[0.2em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer bg-transparent hover:bg-white text-white hover:text-studio-dark border border-white/20 hover:border-white"
-                      >
-                        <Settings2 className="w-3.5 h-3.5" /> Editar Card
-                      </button>
-                    </div>
+                        {/* Botão de Editar Card */}
+                        <button
+                          onClick={() => handleEditClick(track.id)}
+                          className="px-4 py-3 rounded-none font-display text-[10px] uppercase tracking-[0.2em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer bg-transparent hover:bg-white text-white hover:text-studio-dark border border-white/20 hover:border-white"
+                        >
+                          <Settings2 className="w-3.5 h-3.5" /> Editar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex mt-3">
+                        <a
+                          href={`https://wa.me/5512996539857?text=${encodeURIComponent(
+                            `Olá Vesper Music! Gostei muito da amostra de "${track.title}" (${track.category}) no site de vocês. Gostaria de saber como funciona e os valores para solicitar uma criação personalizada nesse estilo!`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full py-3.5 rounded-none font-display text-[10px] uppercase tracking-[0.25em] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer bg-transparent hover:bg-neon-blue text-neon-blue hover:text-studio-dark border border-neon-blue/30 hover:border-neon-blue shadow-[0_0_15px_rgba(0,242,255,0.02)] hover:shadow-[0_0_15px_rgba(0,242,255,0.15)]"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-neon-blue animate-pulse" /> SOLICITAR ESSE ESTILO
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
