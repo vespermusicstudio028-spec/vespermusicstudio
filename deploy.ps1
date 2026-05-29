@@ -112,6 +112,25 @@ if ([string]::IsNullOrEmpty($gitStatus)) {
 }
 
 # --- 3. PUSH PARA GITHUB ---
+Show-Step "Verificando se o repositorio remoto esta configurado..."
+
+# Obter remotos do Git
+$remotes = git remote
+
+if ($remotes -notcontains "origin") {
+    Show-Step "Repositorio remoto 'origin' nao encontrado. Adicionando automaticamente..." "WARNING"
+    git remote add origin "https://github.com/vespermusicstudio028-spec/vespermusicstudio.git"
+    if ($LASTEXITCODE -eq 0) {
+        Show-Step "Repositorio 'origin' adicionado com sucesso!" "SUCCESS"
+    } else {
+        Show-Step "Falha ao adicionar o repositorio remoto 'origin'." "ERROR"
+        Write-Host "Por favor, execute manualmente: git remote add origin https://github.com/vespermusicstudio028-spec/vespermusicstudio.git" -ForegroundColor Red
+        Write-Host "Pressione qualquer tecla para sair..."
+        $null = [Console]::ReadKey($true)
+        Exit 1
+    }
+}
+
 Show-Step "Enviando atualizacoes para o GitHub..."
 git push origin main
 
