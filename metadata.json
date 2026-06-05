@@ -1,6 +1,6 @@
 {
   "name": "Vesper Music Studio",
-  "description": "Estúdio profissional de criação e produção musical personalizada com inteligência artificial para marcas e momentos especiais.",
+  "description": "Estúdio profissional de produção musical, jingles e trilhas sonoras com visual premium estilo Spotify.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

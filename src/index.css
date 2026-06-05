@@ -1,36 +1,54 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  
-  --color-neon-blue: #00f2ff;
-  --color-neon-pink: #ff0055;
-  --color-studio-dark: #050505;
-  --color-studio-card: #121212;
-  --color-studio-card-hover: #1c1c1c;
+  --color-vesper-black: #0F0F0F;
+  --color-vesper-blue: #00A8FF;
+  --color-vesper-red: #FF2E63;
+  --color-vesper-dark: #121212;
+  --color-vesper-darker: #181818;
+  --color-vesper-gray: #282828;
+  --color-vesper-lightgray: #B3B3B3;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
 }
 
-@layer base {
-  body {
-    background-color: var(--color-studio-dark);
-    color: #f3f4f6;
-  }
+body {
+  background-color: var(--color-vesper-black);
+  color: white;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 
-/* Custom sound wave visualizer bar animation keyframe */
-@keyframes equalizer {
-  0%, 100% {
-    transform: scaleY(0.3);
-  }
-  50% {
-    transform: scaleY(1);
-  }
+.glow-text-blue {
+  text-shadow: 0 0 10px rgba(0, 168, 255, 0.7), 0 0 20px rgba(0, 168, 255, 0.5);
 }
 
-.animate-equalizer {
-  animation: equalizer 1.2s ease-in-out infinite;
-  transform-origin: bottom;
+.glow-text-red {
+  text-shadow: 0 0 10px rgba(255, 46, 99, 0.7), 0 0 20px rgba(255, 46, 99, 0.5);
 }
+
+.glow-box-blue {
+  box-shadow: 0 0 20px rgba(0, 168, 255, 0.2);
+}
+
+.glow-box-red {
+  box-shadow: 0 0 20px rgba(255, 46, 99, 0.2);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-vesper-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-vesper-gray);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-vesper-lightgray);
+}
+
