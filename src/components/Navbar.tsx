@@ -30,9 +30,16 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
-        <a href="#home" className="text-2xl font-display font-black tracking-wider flex flex-col leading-none z-50">
-          <span className="text-vesper-blue glow-text-blue">VESPER</span>
-          <span className="text-white text-sm tracking-[0.2em] font-sans">MUSIC STUDIO</span>
+        <a href="#home" className="flex items-center gap-3 z-50">
+          <img 
+            src="/logo.jpg" 
+            alt="Vesper Music Studio Logo" 
+            className="w-11 h-11 rounded-full object-cover border-2 border-vesper-blue/60 shadow-lg shadow-vesper-blue/20"
+          />
+          <div className="flex flex-col leading-none">
+            <span className="text-2xl font-display font-black tracking-wider text-vesper-blue glow-text-blue">VESPER</span>
+            <span className="text-white text-sm tracking-[0.2em] font-sans">MUSIC STUDIO</span>
+          </div>
         </a>
 
         {/* Desktop Nav */}
